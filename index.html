@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:,">
+<title>Peptide Moisturizer, from cranberry to bottle | Tava Labs</title>
+<style>
+  :root{
+    --mint:#C6F0E4;
+    --mint2:#A7E8D7;
+    --plum:#64165D;
+    --magenta:#8A176E;
+    --ink:#2A0A28;
+    --paper:#FFF9FD;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:auto;}
+  body{
+    font-family:"Avenir Next","Segoe UI",Helvetica,Arial,sans-serif;
+    color:var(--ink);
+    background:var(--mint);
+    overflow-x:hidden;
+  }
+  /* ---------- background layers ---------- */
+  .bg{position:fixed;inset:0;z-index:0;pointer-events:none;}
+  #bgMint{
+    background:
+      radial-gradient(75% 60% at 22% 12%, rgba(255,255,255,.75) 0%, rgba(255,255,255,0) 62%),
+      radial-gradient(70% 55% at 85% 88%, rgba(167,232,215,.8) 0%, rgba(167,232,215,0) 65%),
+      linear-gradient(160deg,var(--mint) 0%,var(--mint2) 55%,#DFF7EE 100%);
+    opacity:1;
+  }
+  #bgPlum{
+    background:
+      radial-gradient(70% 55% at 78% 18%, rgba(138,23,110,.85) 0%, rgba(138,23,110,0) 65%),
+      radial-gradient(60% 48% at 12% 85%, rgba(138,23,110,.55) 0%, rgba(138,23,110,0) 70%),
+      radial-gradient(50% 40% at 45% 55%, rgba(216,193,154,.14) 0%, rgba(216,193,154,0) 70%),
+      linear-gradient(165deg,#4A0F45 0%, var(--plum) 52%, #38093A 100%);
+    opacity:0;
+  }
+  /* ---------- animated gold waves ---------- */
+  #waves{position:fixed;inset:0;z-index:1;pointer-events:none;}
+  /* ---------- parallax blobs ---------- */
+  .blob{position:fixed;border-radius:50%;filter:blur(84px);z-index:1;pointer-events:none;opacity:.42;}
+  #blob1{width:420px;height:420px;left:-120px;top:10%;background:#FFFFFF;}
+  #blob2{width:340px;height:340px;right:-100px;top:46%;background:var(--magenta);}
+  #blob3{width:260px;height:260px;left:14%;bottom:-80px;background:var(--mint2);}
+  /* ---------- 3d canvas ---------- */
+  #stage{position:fixed;inset:0;z-index:2;pointer-events:none;}
+  #stage canvas{display:block;width:100%;height:100%;}
+  /* ---------- text panels ---------- */
+  .panel{
+    position:fixed;left:0;right:0;z-index:3;pointer-events:none;
+    display:flex;flex-direction:column;align-items:center;text-align:center;
+    padding:0 22px;opacity:0;
+  }
+  .panel .eyebrow{
+    font-size:12px;letter-spacing:.24em;text-transform:uppercase;font-weight:700;
+    padding:8px 14px;border-radius:999px;margin-bottom:18px;
+  }
+  .panel h1,.panel h2{
+    font-size:clamp(34px,6.2vw,64px);line-height:1.04;font-weight:800;max-width:13em;
+  }
+  .panel p{
+    margin-top:16px;font-size:clamp(16px,2.2vw,20px);line-height:1.5;max-width:34em;font-weight:500;
+  }
+  #panel1{top:9%;}
+  #panel1 .eyebrow{background:rgba(255,255,255,.65);color:var(--plum);}
+  #panel1 h1{color:var(--plum);}
+  #panel1 p{color:#3D2B3B;}
+  #panel2{top:12%;}
+  #panel2 .eyebrow{background:rgba(255,255,255,.16);color:#FFD9F4;}
+  #panel2 h2{color:#FFFFFF;}
+  #panel2 p{color:#F3DCEF;}
+  #panel3{top:12%;}
+  #panel3 .eyebrow{background:rgba(255,255,255,.16);color:#FFD9F4;}
+  #panel3 h2{color:#FFFFFF;}
+  #panel3 p{color:#F3DCEF;}
+  /* ---------- final buy panel ---------- */
+  #panelFinal{
+    top:0;bottom:0;justify-content:flex-end;padding-bottom:5.5vh;
+  }
+  #panelFinal .card{
+    pointer-events:auto;
+    background:rgba(255,249,253,.97);
+    border-radius:26px;
+    padding:26px 30px 28px;
+    max-width:520px;width:100%;
+    box-shadow:0 30px 60px rgba(20,2,18,.45);
+    text-align:center;
+  }
+  #panelFinal .tagline{
+    font-size:12px;letter-spacing:.24em;text-transform:uppercase;font-weight:700;color:var(--magenta);margin-bottom:8px;
+  }
+  #panelFinal h2{font-size:clamp(28px,4.6vw,40px);color:var(--plum);}
+  #panelFinal .price{
+    margin-top:10px;font-size:clamp(24px,3.6vw,32px);font-weight:800;color:var(--ink);
+  }
+  #panelFinal .price span{font-size:.58em;font-weight:600;color:#6B5568;}
+  #panelFinal .sentence{margin-top:10px;font-size:16px;line-height:1.5;color:#46303F;max-width:none;}
+  #panelFinal a.cta{
+    display:inline-block;margin-top:20px;
+    background:var(--magenta);color:#FFFFFF;text-decoration:none;
+    font-size:17px;font-weight:700;
+    padding:15px 42px;border-radius:999px;
+    box-shadow:0 12px 26px rgba(138,23,110,.45);
+  }
+  #panelFinal a.cta:active{transform:scale(.98);}
+  /* ---------- scroll hint and progress ---------- */
+  #hint{
+    position:fixed;left:0;right:0;bottom:26px;z-index:4;text-align:center;
+    font-size:12px;letter-spacing:.26em;text-transform:uppercase;font-weight:700;color:var(--plum);
+    pointer-events:none;
+  }
+  #hint .arrow{display:block;font-size:18px;margin-top:6px;letter-spacing:0;}
+  #progressTrack{position:fixed;top:0;left:0;height:4px;width:100%;z-index:5;background:rgba(255,255,255,.25);}
+  #progressBar{height:100%;width:0%;background:var(--magenta);}
+  #spacer{height:760vh;position:relative;z-index:0;}
+  /* ---------- loading note ---------- */
+  #loading{
+    position:fixed;inset:0;z-index:6;display:flex;align-items:center;justify-content:center;
+    font-size:13px;letter-spacing:.22em;text-transform:uppercase;font-weight:700;color:var(--plum);
+    pointer-events:none;transition:opacity .6s;text-align:center;
+  }
+  #loading span{max-width:88vw;}
+  #loading.error{pointer-events:auto;cursor:pointer;}
+  /* ---------- reduced motion fallback ---------- */
+  body.reduced #spacer{display:none;}
+  body.reduced .panel{position:relative;opacity:1 !important;transform:none !important;padding:56px 22px 8px;}
+  body.reduced #panel2 h2,body.reduced #panel3 h2{color:var(--plum);}
+  body.reduced #panel2 p,body.reduced #panel3 p{color:#3D2B3B;}
+  body.reduced #panel2 .eyebrow,body.reduced #panel3 .eyebrow{background:rgba(100,22,93,.1);color:var(--plum);}
+  body.reduced #panelFinal{padding-bottom:64px;}
+  body.reduced #hint{display:none;}
+  body.reduced #stage{position:relative;height:54vh;inset:auto;}
+  body.reduced #bgMint{opacity:1 !important;}
+  body.reduced #bgPlum{opacity:0 !important;}
+  body.reduced #progressTrack{display:none;}
+  body.reduced .blob{display:none;}
+  @media (max-width:560px){
+    #panel1{top:6%;}
+    #panelFinal .card{padding:22px 20px 24px;}
+    .blob{filter:blur(56px);}
+  }
+</style>
+</head>
+<body>
+
+<div class="bg" id="bgMint"></div>
+<div class="bg" id="bgPlum"></div>
+<canvas id="waves"></canvas>
+<div class="blob" id="blob1"></div>
+<div class="blob" id="blob2"></div>
+<div class="blob" id="blob3"></div>
+<div id="stage"></div>
+<div id="progressTrack"><div id="progressBar"></div></div>
+
+<section class="panel" id="panel1">
+  <div class="eyebrow">Skincare for entrepreneurs</div>
+  <h1>It starts with cranberry.</h1>
+  <p>Cranberry fruit extract is a real ingredient in the Tava Labs Peptide Moisturizer. Scroll to watch it become the finished bottle.</p>
+</section>
+
+<section class="panel" id="panel2">
+  <div class="eyebrow">Step two, the mix</div>
+  <h2>Then the rest of the formula joins.</h2>
+  <p>Aloe vera and moringa come in, and the copper peptide arrives as golden spheres. Every ingredient is one we list on the label.</p>
+</section>
+
+<section class="panel" id="panel3">
+  <div class="eyebrow">Step three, the bottle</div>
+  <h2>It becomes one daily moisturizer.</h2>
+  <p>The full formula ends up in a single bottle, ready for your morning and your night routine.</p>
+</section>
+
+<section class="panel" id="panelFinal">
+  <div class="card">
+    <div class="tagline">Skincare for entrepreneurs</div>
+    <h2>Peptide Moisturizer</h2>
+    <div class="price">$27.99 <span>one time &middot; 1.7 fl oz (50 ml)</span></div>
+    <p class="sentence">A peptide face moisturizer with cranberry, aloe, and moringa. Apply a dime sized amount to your face and neck, morning or night.</p>
+    <a class="cta" href="https://tavalabs.app/peptide-moisturizer">Add to routine</a>
+  </div>
+</section>
+
+<div id="hint">Scroll<span class="arrow">&#8595;</span></div>
+<div id="loading"><span id="loadingText">Loading the ingredients</span></div>
+<div id="spacer"></div>
+
+<script>
+/* Animated gold wavy lines: layered sine strokes in the Tava gold family
+   (#B78B45 into champagne #D8C19A), gently undulating and drifting, with
+   per layer parallax against the scroll. Under reduced motion one static
+   frame is drawn and held. */
+(function () {
+  var canvas = document.getElementById('waves');
+  var ctx = canvas.getContext('2d');
+  var reducedW = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var W = 0, H = 0;
+  function size() {
+    var DPR = Math.min(window.devicePixelRatio || 1, 1.5);
+    W = window.innerWidth; H = window.innerHeight;
+    canvas.width = Math.round(W * DPR);
+    canvas.height = Math.round(H * DPR);
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+  size();
+
+  var GOLD = [183, 139, 69];
+  var CHAMP = [216, 193, 154];
+  var layers = [
+    { y: 0.14, amp: 26, k1: 0.006, k2: 0.017, sp: 0.16, w: 2.4, a: 0.50, par: 16, mix: 0.15 },
+    { y: 0.28, amp: 17, k1: 0.009, k2: 0.023, sp: 0.22, w: 1.4, a: 0.34, par: 34, mix: 0.55 },
+    { y: 0.43, amp: 30, k1: 0.005, k2: 0.013, sp: 0.12, w: 3.0, a: 0.55, par: 10, mix: 0.30 },
+    { y: 0.57, amp: 15, k1: 0.011, k2: 0.027, sp: 0.26, w: 1.2, a: 0.30, par: 48, mix: 0.70 },
+    { y: 0.69, amp: 23, k1: 0.007, k2: 0.019, sp: 0.18, w: 2.0, a: 0.44, par: 26, mix: 0.45 },
+    { y: 0.81, amp: 14, k1: 0.010, k2: 0.021, sp: 0.24, w: 1.3, a: 0.30, par: 62, mix: 0.85 },
+    { y: 0.91, amp: 19, k1: 0.006, k2: 0.015, sp: 0.14, w: 1.7, a: 0.38, par: 40, mix: 0.60 }
+  ];
+  function clamp01(v) { return Math.min(1, Math.max(0, v)); }
+  function smooth(t) { t = clamp01(t); return t * t * (3 - 2 * t); }
+  function scrollP() {
+    var max = document.documentElement.scrollHeight - window.innerHeight;
+    return max > 0 ? clamp01(window.scrollY / max) : 0;
+  }
+  var pDamped = 0;
+  function draw(t) {
+    var p = reducedW ? 0.35 : pDamped;
+    var plum = smooth((p - 0.22) / 0.40);
+    ctx.clearRect(0, 0, W, H);
+    for (var i = 0; i < layers.length; i++) {
+      var L = layers[i];
+      var mf = clamp01(0.2 + 0.55 * plum + (L.mix - 0.5) * 0.35);
+      var r = Math.round(GOLD[0] + (CHAMP[0] - GOLD[0]) * mf);
+      var g = Math.round(GOLD[1] + (CHAMP[1] - GOLD[1]) * mf);
+      var b = Math.round(GOLD[2] + (CHAMP[2] - GOLD[2]) * mf);
+      var alpha = L.a * (0.8 + 0.45 * plum);
+      var ph = t * L.sp + i * 1.7;
+      var baseY = L.y * H - p * L.par + Math.sin(t * 0.13 + i * 1.3) * 2.5;
+      for (var pass = 0; pass < 2; pass++) {
+        ctx.beginPath();
+        for (var x = -10; x <= W + 10; x += 6) {
+          var y = baseY
+            + Math.sin(x * L.k1 + ph) * L.amp
+            + Math.sin(x * L.k2 - ph * 0.6) * L.amp * 0.45;
+          if (x === -10) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + (pass === 0 ? (alpha * 0.16).toFixed(3) : alpha.toFixed(3)) + ')';
+        ctx.lineWidth = pass === 0 ? L.w * 3.4 : L.w;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+      }
+    }
+  }
+  if (reducedW) {
+    pDamped = 0.35;
+    draw(24);
+    window.addEventListener('resize', function () { size(); draw(24); });
+  } else {
+    var last = performance.now();
+    (function loop(now) {
+      var dt = Math.min(Math.max((now - last) / 1000, 0.001), 0.5);
+      last = now;
+      pDamped += (scrollP() - pDamped) * (1 - Math.exp(-dt * 4.0));
+      draw(now / 1000);
+      requestAnimationFrame(loop);
+    })(performance.now());
+    window.addEventListener('resize', size);
+  }
+})();
+</script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "./lib/three.module.js",
+    "three/addons/": "./lib/addons/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+if (reduced) document.body.classList.add('reduced');
+
+const JAR_Y_OFFSET = 0; /* tuned after the front render check */
+
+const stage = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
+const PR_CAP = Math.min(window.devicePixelRatio || 1, 1.5);
+let pixelRatio = PR_CAP;
+renderer.setPixelRatio(pixelRatio);
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+stage.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(38, window.innerWidth / window.innerHeight, 0.1, 100);
+camera.position.set(0, 0.4, 8.2);
+
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+const hemi = new THREE.HemisphereLight(0xffffff, 0x64165D, 0.7);
+scene.add(hemi);
+const key = new THREE.DirectionalLight(0xffffff, 1.6);
+key.position.set(4, 6, 6);
+scene.add(key);
+const rim = new THREE.PointLight(0xE85AC0, 30, 30);
+rim.position.set(-5, 2.5, -3.5);
+scene.add(rim);
+const fill = new THREE.PointLight(0xA7E8D7, 10, 25);
+fill.position.set(4, -2, 3);
+scene.add(fill);
+
+/* ---------- helpers ---------- */
+const clamp01 = v => Math.min(1, Math.max(0, v));
+const seg = (p, a, b) => clamp01((p - a) / (b - a));
+const smooth = t => { t = clamp01(t); return t * t * (3 - 2 * t); };
+const lerp = (a, b, t) => a + (b - a) * t;
+
+function normalize(obj, targetSize) {
+  const box = new THREE.Box3().setFromObject(obj);
+  const size = new THREE.Vector3(); box.getSize(size);
+  const center = new THREE.Vector3(); box.getCenter(center);
+  const maxDim = Math.max(size.x, size.y, size.z) || 1;
+  const s = targetSize / maxDim;
+  const inner = new THREE.Group();
+  inner.add(obj);
+  obj.position.sub(center);
+  const outer = new THREE.Group();
+  outer.add(inner);
+  outer.scale.setScalar(s);
+  outer.userData.baseScale = s;
+  outer.traverse(n => {
+    if (n.isMesh) {
+      n.material = n.material.clone();
+      n.material.transparent = true;
+    }
+  });
+  return outer;
+}
+function setOpacity(group, o) {
+  group.traverse(n => { if (n.isMesh) n.material.opacity = o; });
+}
+
+/* ---------- load models ---------- */
+const loader = new GLTFLoader();
+const world = new THREE.Group();
+scene.add(world);
+const models = {};
+let loadedCount = 0;
+/* Models stream in as per model text files (models/*.b64) fetched in
+   parallel: nothing blocks the page, progress is real bytes received, each
+   model is decoded in chunks and parsed on its own, the loading note clears
+   as soon as the first model is ready, and a failed or stalled model never
+   blocks the scene. */
+const MODEL_DEFS = [
+  ['cranberry', 'models/cranberry.b64', 4025824, 2.1],
+  ['aloe',      'models/aloe.b64',      1784272, 2.3],
+  ['moringa',   'models/moringa.b64',   4408092, 2.3],
+  ['jar',       ['models/jar-1.b64', 'models/jar-2.b64'], 5782424, 3.6],
+];
+const TOTAL_B64 = MODEL_DEFS.reduce((s, d) => s + d[2], 0);
+const loadingEl = document.getElementById('loading');
+const loadingText = document.getElementById('loadingText');
+let receivedTotal = 0, settledCount = 0, failedCount = 0;
+let firstReady = false, retryShown = false;
+let lastProgressAt = performance.now();
+const controllers = {};
+
+function setProgressText() {
+  if (retryShown || firstReady) return;
+  const pct = Math.min(99, Math.floor(receivedTotal / TOTAL_B64 * 100));
+  loadingText.textContent = 'Loading the ingredients · ' + pct + '%';
+}
+function hideLoading() { loadingEl.style.opacity = '0'; }
+function showRetry() {
+  retryShown = true;
+  loadingText.textContent = 'The ingredients could not load. Tap to try again.';
+  loadingEl.style.opacity = '1';
+  loadingEl.classList.add('error');
+}
+loadingEl.addEventListener('click', () => { if (retryShown) location.reload(); });
+
+function onSettled(ok) {
+  settledCount++;
+  lastProgressAt = performance.now();
+  if (ok) {
+    loadedCount++;
+    if (!firstReady) { firstReady = true; hideLoading(); }
+  } else {
+    failedCount++;
+  }
+  if (settledCount === MODEL_DEFS.length) {
+    if (loadedCount === 0) {
+      showRetry();
+    } else if (failedCount > 0 && !retryShown) {
+      loadingText.textContent = 'One ingredient could not load.';
+      loadingEl.style.opacity = '1';
+      setTimeout(hideLoading, 5000);
+    }
+  }
+}
+
+/* stall watchdog: if no bytes and no settled model for 45 seconds, abort
+   whatever is still pending so the retry message can surface */
+const watchdog = setInterval(() => {
+  if (settledCount === MODEL_DEFS.length) { clearInterval(watchdog); return; }
+  if (performance.now() - lastProgressAt > 45000) {
+    for (const k in controllers) controllers[k].abort();
+    clearInterval(watchdog);
+  }
+}, 5000);
+
+async function fetchModelText(urls, ctrl) {
+  /* a model may ship as ordered parts; fetch them in order and join */
+  let out = '';
+  for (const url of [].concat(urls)) {
+    const res = await fetch(url, { signal: ctrl.signal });
+    if (!res.ok) throw new Error('http ' + res.status);
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      receivedTotal += value.byteLength;
+      lastProgressAt = performance.now();
+      setProgressText();
+      out += dec.decode(value, { stream: true });
+    }
+    out += dec.decode();
+  }
+  return out;
+}
+
+async function decodeB64(text) {
+  const CH = 32768; /* multiple of 4 so slices stay aligned */
+  const parts = [];
+  let total = 0, n = 0;
+  for (let i = 0; i < text.length; i += CH) {
+    const bin = atob(text.slice(i, i + CH));
+    const u8 = new Uint8Array(bin.length);
+    for (let j = 0; j < bin.length; j++) u8[j] = bin.charCodeAt(j);
+    parts.push(u8); total += u8.length;
+    if (++n % 8 === 0) await new Promise(r => setTimeout(r, 0));
+  }
+  const buf = new Uint8Array(total);
+  let off = 0;
+  for (const p of parts) { buf.set(p, off); off += p.length; }
+  return buf.buffer;
+}
+
+async function loadModel([name, file, , size]) {
+  const ctrl = new AbortController();
+  controllers[name] = ctrl;
+  try {
+    const text = await fetchModelText(file, ctrl);
+    const buf = await decodeB64(text);
+    const gltf = await loader.parseAsync(buf, '');
+    const g = normalize(gltf.scene, size);
+    g.visible = false;
+    world.add(g);
+    models[name] = g;
+    if (reduced && name === 'jar') fitReduced();
+    onSettled(true);
+  } catch (err) {
+    console.warn('model failed', name, err);
+    onSettled(false);
+  }
+}
+for (const def of MODEL_DEFS) loadModel(def);
+
+/* ---------- golden peptide spheres and droplets ---------- */
+const goldMat = new THREE.MeshPhysicalMaterial({ color: 0xE8B558, metalness: 1.0, roughness: 0.18, clearcoat: 0.6, envMapIntensity: 1.5 });
+const dropMat = new THREE.MeshPhysicalMaterial({ color: 0xEAFBF4, metalness: 0, roughness: 0.05, transmission: 0.65, thickness: 1.2, transparent: true, opacity: 0.85 });
+const spheres = [];
+const sphereGroup = new THREE.Group();
+scene.add(sphereGroup);
+for (let i = 0; i < 16; i++) {
+  const isDrop = i >= 12;
+  const r = isDrop ? 0.09 + Math.random() * 0.05 : 0.11 + Math.random() * 0.09;
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(r, 28, 22), isDrop ? dropMat.clone() : goldMat.clone());
+  mesh.userData = {
+    angleOff: (i / 16) * Math.PI * 2 + Math.random() * 0.5,
+    radius: 1.5 + Math.random() * 0.9,
+    heightOff: (Math.random() - 0.5) * 1.5,
+    speed: 0.7 + Math.random() * 0.7,
+  };
+  sphereGroup.add(mesh);
+  spheres.push(mesh);
+}
+
+/* ---------- scroll state ---------- */
+let targetP = 0, currentP = 0;
+function readScroll() {
+  const max = document.documentElement.scrollHeight - window.innerHeight;
+  targetP = max > 0 ? clamp01(window.scrollY / max) : 0;
+}
+window.addEventListener('scroll', readScroll, { passive: true });
+readScroll();
+if (reduced) { targetP = 0.93; currentP = 0.93; }
+
+const panels = {
+  p1: document.getElementById('panel1'),
+  p2: document.getElementById('panel2'),
+  p3: document.getElementById('panel3'),
+  pf: document.getElementById('panelFinal'),
+};
+const bgMint = document.getElementById('bgMint');
+const bgPlum = document.getElementById('bgPlum');
+const hint = document.getElementById('hint');
+const bar = document.getElementById('progressBar');
+const blobs = [
+  { el: document.getElementById('blob1'), f: 130 },
+  { el: document.getElementById('blob2'), f: 240 },
+  { el: document.getElementById('blob3'), f: 70 },
+];
+
+function panelState(el, p, a, b, c, d, par) {
+  let o = 0;
+  if (p > a && p < d) o = Math.min(seg(p, a, b), 1 - seg(p, c, d));
+  el.style.opacity = reduced ? '' : o.toFixed(3);
+  el.style.transform = 'translateY(' + ((p - (a + d) / 2) * par).toFixed(1) + 'px)';
+  el.style.pointerEvents = 'none';
+  return o;
+}
+
+/* ---------- choreography ---------- */
+const CENTER_Y = 0.1;
+function pose(p, t) {
+  const mixIn = smooth(seg(p, 0.30, 0.42));        /* ingredients arrive */
+  const spiral = smooth(seg(p, 0.64, 0.84));       /* the mix resolves */
+  const jarIn = smooth(seg(p, 0.66, 0.86));        /* jar grows in */
+
+  const ringAngle = t * 0.55 + p * 5.0;
+  /* keep the ring inside the frame on narrow screens */
+  const widthFit = Math.min(1, camera.aspect / 1.1);
+  const ringR = lerp(2.6, 1.55, mixIn) * (0.35 + 0.65 * widthFit);
+
+  const parts = [
+    { g: models.cranberry, off: 0.0, solo: true },
+    { g: models.aloe,      off: 2.1, solo: false },
+    { g: models.moringa,   off: 4.2, solo: false },
+  ];
+  for (const part of parts) {
+    if (!part.g) continue;
+    const presence = part.solo ? 1 : mixIn;
+    if (presence <= 0.001 || spiral >= 0.999) { part.g.visible = false; continue; }
+    part.g.visible = true;
+    let x, y, z, s;
+    if (part.solo && mixIn < 1) {
+      /* cranberry starts center stage, then drifts out to the ring */
+      const a = ringAngle + part.off;
+      x = lerp(0, Math.cos(a) * ringR, mixIn);
+      y = lerp(CENTER_Y - 0.35 + Math.sin(t * 0.7) * 0.06, CENTER_Y + Math.sin(t * 0.9) * 0.22, mixIn);
+      z = lerp(0, Math.sin(a) * ringR * 0.38, mixIn);
+      s = lerp(1.15, 0.8, mixIn);
+    } else {
+      const a = ringAngle + part.off;
+      x = Math.cos(a) * ringR;
+      y = CENTER_Y + Math.sin(t * 0.9 + part.off) * 0.22;
+      z = Math.sin(a) * ringR * 0.38;
+      s = 0.8;
+    }
+    /* spiral into the center for the transformation */
+    const r = 1 - spiral;
+    part.g.position.set(x * r, lerp(y, CENTER_Y + 0.4, spiral), z * r);
+    const finalScale = part.g.userData.baseScale * s * lerp(1, 0.12, spiral);
+    part.g.scale.setScalar(finalScale);
+    part.g.rotation.y = t * (part.solo ? 0.35 : 0.5) + part.off;
+    part.g.rotation.x = Math.sin(t * 0.4 + part.off) * 0.12;
+    setOpacity(part.g, presence * (1 - spiral));
+  }
+
+  /* golden spheres */
+  const sphPresence = mixIn * (1 - spiral);
+  sphereGroup.visible = sphPresence > 0.01;
+  if (sphereGroup.visible) {
+    for (const mesh of spheres) {
+      const u = mesh.userData;
+      const a = ringAngle * u.speed + u.angleOff;
+      const rr = u.radius * (0.35 + 0.65 * widthFit) * (1 - spiral * 0.92);
+      mesh.position.set(
+        Math.cos(a) * rr,
+        CENTER_Y + u.heightOff * (1 - spiral) + Math.sin(t * 1.3 + u.angleOff) * 0.14,
+        Math.sin(a) * rr * 0.42
+      );
+      mesh.material.opacity = mesh.material === dropMat ? 0.85 * sphPresence : sphPresence;
+      if (mesh.material.transparent !== true) mesh.material.transparent = true;
+      mesh.material.opacity = sphPresence * (mesh.geometry.parameters.radius > 0.13 ? 1 : 0.9);
+    }
+  }
+
+  /* the jar */
+  if (models.jar) {
+    const j = models.jar;
+    j.visible = jarIn > 0.001;
+    if (j.visible) {
+      const heroY = reduced ? 0.0 : lerp(-0.6, 0.0, smooth(seg(p, 0.84, 1)));
+      j.position.set(0, heroY + Math.sin(t * 0.8) * 0.05 * jarIn, 0);
+      j.scale.setScalar(j.userData.baseScale * lerp(0.25, 0.94, jarIn));
+      j.rotation.y = JAR_Y_OFFSET + lerp(-2.4, 0, smooth(seg(p, 0.66, 0.88))) + (reduced ? 0 : Math.sin(t * 0.3) * 0.05 * seg(p, 0.9, 1));
+      setOpacity(j, Math.min(1, jarIn * 2.2));
+    }
+  }
+
+  /* camera drift */
+  camera.position.z = lerp(8.4, 6.9, smooth(seg(p, 0.0, 0.9)));
+  camera.position.y = 0.4 + Math.sin(t * 0.25) * 0.05;
+  camera.lookAt(0, 0, 0);
+
+  /* background and page chrome */
+  const plumMix = smooth(seg(p, 0.22, 0.62));
+  if (!reduced) {
+    bgMint.style.opacity = (1 - plumMix).toFixed(3);
+    bgPlum.style.opacity = plumMix.toFixed(3);
+    hint.style.opacity = (1 - seg(p, 0.02, 0.08)).toFixed(3);
+    bar.style.width = (p * 100).toFixed(1) + '%';
+    blobs.forEach((b, i) => {
+      b.el.style.transform = 'translateY(' + (-p * b.f).toFixed(1) + 'px)';
+      b.el.style.opacity = (i === 1 ? 0.18 + plumMix * 0.36 : 0.42 - plumMix * 0.14).toFixed(2);
+    });
+  }
+
+  panelState(panels.p1, p, -0.05, 0.02, 0.20, 0.30, -70);
+  panelState(panels.p2, p, 0.33, 0.42, 0.55, 0.64, -90);
+  panelState(panels.p3, p, 0.63, 0.71, 0.79, 0.86, -90);
+  const fo = seg(p, 0.87, 0.95);
+  panels.pf.style.opacity = reduced ? '' : fo.toFixed(3);
+  panels.pf.style.transform = 'translateY(' + ((1 - fo) * 30).toFixed(1) + 'px)';
+  panels.pf.querySelector('.card').style.pointerEvents = fo > 0.6 ? 'auto' : 'none';
+}
+
+/* ---------- reduced motion static layout ---------- */
+function fitReduced() {
+  if (!reduced) return;
+  const w = stage.clientWidth || window.innerWidth;
+  const h = stage.clientHeight || Math.round(window.innerHeight * 0.54);
+  renderer.setSize(w, h, false);
+  renderer.domElement.style.width = '100%';
+  renderer.domElement.style.height = '100%';
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  pose(0.93, 0);
+  renderer.render(scene, camera);
+}
+
+/* ---------- loop ---------- */
+const clock = new THREE.Clock();
+window.__progress = () => ({ target: targetP, current: currentP });
+window.__vpPerf = () => ({ pixelRatio: pixelRatio, emaDtMs: +emaDt.toFixed(2), loaded: loadedCount });
+let lastNow = performance.now();
+let emaDt = 16.7, adaptCooldown = 0;
+function tick() {
+  const t = clock.getElapsedTime();
+  const now = performance.now();
+  const rawDtMs = now - lastNow;
+  const dt = Math.min(Math.max(rawDtMs / 1000, 0.001), 0.5);
+  lastNow = now;
+  /* adaptive quality: if frames run long, step the render resolution down
+     (floor 1.0) so motion stays fluid; recover when there is headroom */
+  if (!reduced && rawDtMs > 0 && rawDtMs < 250) {
+    emaDt += (rawDtMs - emaDt) * 0.04;
+    adaptCooldown -= rawDtMs;
+    if (adaptCooldown <= 0) {
+      if (emaDt > 21 && pixelRatio > 1.0) {
+        pixelRatio = Math.max(1.0, pixelRatio - 0.25);
+        renderer.setPixelRatio(pixelRatio);
+        adaptCooldown = 1500;
+      } else if (emaDt < 12.5 && pixelRatio < PR_CAP) {
+        pixelRatio = Math.min(PR_CAP, pixelRatio + 0.25);
+        renderer.setPixelRatio(pixelRatio);
+        adaptCooldown = 3000;
+      }
+    }
+  }
+  if (!reduced) readScroll();
+  /* frame rate independent smoothing: converges in about a second of wall time,
+     and still tracks the scroll position on very slow devices */
+  if (!reduced) currentP += (targetP - currentP) * (1 - Math.exp(-dt * 5.0));
+  pose(currentP, reduced ? 0 : t);
+  renderer.render(scene, camera);
+  if (!reduced) requestAnimationFrame(tick);
+}
+tick();
+if (reduced) fitReduced();
+
+window.addEventListener('resize', () => {
+  if (reduced) { fitReduced(); return; }
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  readScroll();
+});
+</script>
+</body>
+</html>
